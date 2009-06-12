@@ -3,8 +3,8 @@ package em2m.util;
 import java.util.Vector;
 
 /**
- *
- * @author DaM3s3lf
+ * This class provide some missing features for operations with Strings.
+ * @author Jan Melník, MEL108
  */
 public class Em2mString{
 

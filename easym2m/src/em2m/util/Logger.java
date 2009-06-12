@@ -12,7 +12,7 @@ import javax.microedition.io.Connector;
 /**
  * This class can be used for logging events, debuging etc.
  * Records are writen into file in root directory called logfile.txt
- * @author Jan Melník
+ * @author Jan Melník, MEL108
  */
 public class Logger {
 
@@ -23,7 +23,7 @@ public class Logger {
     //default file size 100 kB
     private static final long MAX_FILE_SIZE = 100000;
 
-    public static void init(){
+    private static void init(){
         try
         {
             //opens connection, store as fileconnection

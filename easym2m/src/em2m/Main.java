@@ -24,36 +24,33 @@ import em2m.util.Em2mString;
 /**
  * @author DaM3s3lf
  */
-public class Main extends em2m.EM2Mlet{
+public class Main extends EM2Mlet{
+
     ATCommand atc;
 
-        public class Vlakno implements Runnable{
+        /*public class sendResponse extends Thread{
+
+        SMSManager smsm;
+
+        public void sendResponse() {
+            runThreads = true;
+        }
 
         public void run() {
-            while(true)
-                try {
-                wait(1000); //do something
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }//do something
-
+            ;// deal with response
         }
-
-        }
+        }*/
 
     public void startApp() {
         try {
             
-            Logger.init();
             if(!Logger.isInitialized())
             {
                 notifyDestroyed();
                 return;
             }
             SMSManager m = new SMSManager("+420603052000");
-
-
-            System.out.println("konecne kurva drat!");
+            System.out.println("SMS manager initialized");
 
             /*SMS tmp = new SMS();
             tmp.setDestinNumber("608942017");
@@ -63,12 +60,12 @@ public class Main extends em2m.EM2Mlet{
                 //return;
 
 
-            /*ATEventListener smse = new ATEventListener();
-            smse.setListener(this);
-            Em2mATCommand.getATCommand().addListener(smse);
-            m.readMessage(1);*/
+            ATEventListener list = new ATEventListener();
+            list.setListener(this);
+            Em2mATCommand.getATCommand().addListener(list);
+            
+            m.readMessage(1);
             //uloha
-            Vlakno v = new Vlakno();
             //v.run();
             //m.sendMessage(tmp);
 
@@ -139,7 +136,6 @@ public class Main extends em2m.EM2Mlet{
             String tmp = e.getMessage();
             System.out.println(tmp);
         }
-        notifyDestroyed();
     }
 
     public void pauseApp() {
@@ -173,6 +169,6 @@ public class Main extends em2m.EM2Mlet{
     }
 
     public void handleEvent(String event) {
-        Logger.println("SMS dorazila kokine");
+        System.out.println("handle method called!\n"+event+"\n");
     }
 }
