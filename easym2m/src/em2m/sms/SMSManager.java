@@ -10,6 +10,8 @@ import com.siemens.icm.io.ATStringConverter;
 import em2m.FailedInitException;
 import em2m.util.Em2mATCommand;
 import em2m.util.Em2mString;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * This class is used to manage SM services.
@@ -103,17 +105,62 @@ public class SMSManager{
             Em2mATCommand.sendATC("at+cscs=\"UCS2\"");
             Em2mATCommand.sendATC("at+csmp=17,167,0,8");
             String atres = Em2mATCommand.sendATC("at+cmgr="+index,"+CMGR:");
-            //first split lines
+
+            //first split lines, separate header and message body
             String tmp[] = Em2mString.split(atres, "\r\n");
-            if(tmp.length<2)//if empty message received, return null
-                return null;
+
             //then split first line to get message source numb. date etc.
             String header[] = Em2mString.split(tmp[1],",");
-            tmp = Em2mString.split(tmp[1],",");
+
+            //no message stored in this position, return null
+            if(header[1].equalsIgnoreCase(""))
+                return null;
+
             SMS res = new SMS();
-            res.setSourceNumber(header[2]);
-            //res.setMessage(tmp[]);
+
+            //remove extra quotes contained in string
+            String temporary = header[1];
+            temporary = temporary.substring(1,temporary.length()-1);
+            //store source num
+            res.setSourceNumber(ATStringConverter.UCS2Hex2Java(temporary));
+            //store text
+            res.setMessage(ATStringConverter.UCS2Hex2Java(tmp[2]));
+
+            //convert date from GSM 03.40 time string format
+            //("yy/MM/dd,hh:mm:ss+zz", where "z" is used for timezone)
+            java.util.Calendar c = java.util.Calendar.getInstance();
+
+            try{
+                //remove extra quote
+                header[3]=header[3].substring(1);
+
+                int val;
+
+                //year
+                val = Integer.parseInt(header[3].substring(0,1));
+                c.set(Calendar.YEAR, val);
+                //month
+                val = Integer.parseInt(header[3].substring(3,4));
+                c.set(Calendar.MONTH, val);
+                //day
+                val = Integer.parseInt(header[3].substring(6,7));
+                c.set(Calendar.DAY_OF_MONTH, val);
+                //hour
+                val = Integer.parseInt(header[4].substring(0,1));
+                c.set(Calendar.HOUR_OF_DAY, val);
+                //minute
+                val = Integer.parseInt(header[4].substring(3,4));
+                c.set(Calendar.MINUTE, val);
+                //second
+                val = Integer.parseInt(header[4].substring(6,7));
+                c.set(Calendar.SECOND, val);
+
+                res.setReceived(c.getTime());
+
+            }catch(NumberFormatException e) {}
+
             return res;
+
         }catch(Exception e){
             return null;
         }

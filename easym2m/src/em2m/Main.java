@@ -8,13 +8,14 @@ package em2m;
 import com.siemens.icm.io.ATCommand;
 import com.siemens.icm.io.ATCommandFailedException;
 import com.siemens.icm.io.ATCommandResponseListener;
-import com.siemens.icm.io.ATStringConverter;
-import em2m.ATEventListener;
+import com.siemens.icm.io.comm.RS232PortList;
+import em2m.EventListener;
 import em2m.util.Logger;
 import java.util.Vector;
 import javax.microedition.midlet.*;
 import javax.microedition.*;
 import em2m.*;
+import em2m.io.GPIO;
 import em2m.sms.SMS;
 import em2m.sms.SMSManager;
 import em2m.util.Em2mATCommand;
@@ -27,15 +28,12 @@ import em2m.util.Em2mString;
 public class Main extends EM2Mlet{
 
     ATCommand atc;
+    EventListener list;
 
         /*public class sendResponse extends Thread{
 
         SMSManager smsm;
-
-        public void sendResponse() {
-            runThreads = true;
-        }
-
+         *
         public void run() {
             ;// deal with response
         }
@@ -43,13 +41,11 @@ public class Main extends EM2Mlet{
 
     public void startApp() {
         try {
-            
-            if(!Logger.isInitialized())
-            {
-                notifyDestroyed();
-                return;
-            }
+            // T-mobile CZ
             SMSManager m = new SMSManager("+420603052000");
+
+            // Vodafone CZ
+            //SMSManager m = new SMSManager("+420608005681");
             System.out.println("SMS manager initialized");
 
             /*SMS tmp = new SMS();
@@ -60,11 +56,19 @@ public class Main extends EM2Mlet{
                 //return;
 
 
-            ATEventListener list = new ATEventListener();
-            list.setListener(this);
-            Em2mATCommand.getATCommand().addListener(list);
+            //create new instance of EventListener
+            list = new EventListener(this);
+            //register him to Em2mATCommand
+            Em2mATCommand.registerListener(list);
+            System.out.println("SMS Listener set");
+            Em2mATCommand.sendATC("at+cmer=2,0,0,2,0\r");
+            System.out.println("Event Reporting set");
             
-            m.readMessage(1);
+            m.readMessage(9);
+
+            GPIO io = new GPIO();
+            io.openPin(0, true);
+            io.setVal(0, true);
             //uloha
             //v.run();
             //m.sendMessage(tmp);
@@ -136,6 +140,7 @@ public class Main extends EM2Mlet{
             String tmp = e.getMessage();
             System.out.println(tmp);
         }
+        System.out.println("App closed");
     }
 
     public void pauseApp() {
@@ -143,7 +148,10 @@ public class Main extends EM2Mlet{
 
     public void destroyApp(boolean unconditional) {
         try {
-            atc.release();
+            if(atc!=null)
+                atc.release();
+            if(list!=null)
+                Em2mATCommand.getATCommand().removeListener(list);
         } catch (ATCommandFailedException ex) {
             System.out.println(ex.getMessage());
         }
@@ -168,7 +176,9 @@ public class Main extends EM2Mlet{
             return "";
     }
 
-    public void handleEvent(String event) {
+    public void handleEvent(int event, String data) {
         System.out.println("handle method called!\n"+event+"\n");
+        System.out.println("exiting program");
+        notifyDestroyed();
     }
 }

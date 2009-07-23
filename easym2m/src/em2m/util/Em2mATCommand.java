@@ -3,6 +3,7 @@ package em2m.util;
 
 import com.siemens.icm.io.ATCommand;
 import com.siemens.icm.io.ATCommandFailedException;
+import com.siemens.icm.io.ATCommandListener;
 
 /**
  * @author DaJohn
@@ -10,6 +11,7 @@ import com.siemens.icm.io.ATCommandFailedException;
 public class Em2mATCommand {
 
     private static ATCommand atc;
+    private ATCommandListener list;
 
     public static void init(){
         try {
@@ -74,11 +76,18 @@ public class Em2mATCommand {
             return false;
         }
     }
+
+    /********************SHIZZL!****************************/
     public static ATCommand getATCommand(){
         if(atc==null) init();
         return atc;
     }
+
     public static void relaseATCommand() throws ATCommandFailedException{
         atc.release();
+    }
+
+    public static void registerListener(ATCommandListener list){
+        atc.addListener(list);
     }
 }

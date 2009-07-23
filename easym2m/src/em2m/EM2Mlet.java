@@ -1,16 +1,15 @@
 package em2m;
 
-import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
 
+public abstract class EM2Mlet extends javax.microedition.midlet.MIDlet{
 
-public abstract class EM2Mlet extends MIDlet{
-
-    public abstract void startApp();
+    public abstract void startApp() throws MIDletStateChangeException;
 
     public abstract void pauseApp();
 
-    public abstract void destroyApp(boolean unconditional);
+    public abstract void destroyApp(boolean unconditional) throws MIDletStateChangeException;
 
-    public abstract void handleEvent(String event);
+    public abstract void handleEvent(int event, String data);
 
 }
