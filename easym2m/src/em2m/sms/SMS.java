@@ -82,4 +82,13 @@ public class SMS {
         this.message = message;
     }
 
+    public String toString(){
+        if (this.sourceNumber!=null)
+            //received sms
+            return this.received + "\n" + this.sourceNumber + "\n"
+                    + this.message;
+        //draft sms
+        return this.destinNumber + "\n" + this.message;
+    }
+
 }

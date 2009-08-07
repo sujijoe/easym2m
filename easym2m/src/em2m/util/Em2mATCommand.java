@@ -11,7 +11,6 @@ import com.siemens.icm.io.ATCommandListener;
 public class Em2mATCommand {
 
     private static ATCommand atc;
-    private ATCommandListener list;
 
     public static void init(){
         try {
@@ -20,7 +19,7 @@ public class Em2mATCommand {
 
     }
 
-    public static String sendATC(String cmd, String response) throws ATCommandFailedException {
+    public static synchronized String sendATC(String cmd, String response) throws ATCommandFailedException {
         if(atc == null) init();
         try {
             String resp = atc.send(cmd + "\r");
@@ -36,7 +35,7 @@ public class Em2mATCommand {
         }
     }
 
-    public static String sendATC(String cmd) throws ATCommandFailedException {
+    public static synchronized String sendATC(String cmd) throws ATCommandFailedException {
             return sendATC(cmd,"OK");
     }
 
@@ -62,7 +61,7 @@ public class Em2mATCommand {
      * in case of expected response returns true, oterwise false;
      * 
      **/
-    public static boolean isCommandDone(String cmd, String response){
+    /*public static boolean isCommandDone(String cmd, String response){
         if(atc == null) init();
         try {
             String resp = atc.send(cmd + "\r");
@@ -75,19 +74,21 @@ public class Em2mATCommand {
         } catch(Exception e) {
             return false;
         }
-    }
+    }*/
 
-    /********************SHIZZL!****************************/
-    public static ATCommand getATCommand(){
-        if(atc==null) init();
-        return atc;
-    }
-
-    public static void relaseATCommand() throws ATCommandFailedException{
-        atc.release();
+    public static void relaseATCommand(){
+        if(atc!=null)
+            try {
+                atc.release();
+            } catch (ATCommandFailedException ex) {}
     }
 
     public static void registerListener(ATCommandListener list){
+        if(atc==null) init();
         atc.addListener(list);
+    }
+    public static void removeListener(ATCommandListener list) {
+        if(atc!=null)
+            atc.removeListener(list);
     }
 }

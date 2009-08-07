@@ -11,7 +11,6 @@ import em2m.FailedInitException;
 import em2m.util.Em2mATCommand;
 import em2m.util.Em2mString;
 import java.util.Calendar;
-import java.util.Date;
 
 /**
  * This class is used to manage SM services.
@@ -19,11 +18,13 @@ import java.util.Date;
  */
 public class SMSManager{
 
+    private static final int CENTURY = 2000;
+    public static final String DEFAULT_SM_STORAGE = "\"SM\",\"SM\",\"SM\"";
+
     private void  Constructor(String servCenter)throws ATCommandFailedException{
            Em2mATCommand.sendATC("at+csca="+servCenter);
            Em2mATCommand.sendATC("at+cmgf=1");
-           Em2mATCommand.sendATC("at+cpms=\"SM\",\"SM\",\"SM\"");
-           Em2mATCommand.sendATC("at+cnmi=2,1,0,0,1");
+           Em2mATCommand.sendATC("at+cpms="+ DEFAULT_SM_STORAGE);
            Em2mATCommand.sendATC("at+creg?", "0,1");
     }
 
@@ -33,15 +34,17 @@ public class SMSManager{
      * @throws em2m.FailedInitException
      */
     public SMSManager(String servCenter) throws FailedInitException{
-        if(!Em2mATCommand.isCommandDone("at+cpin?\r", "READY"))
-            throw new FailedInitException("PIN required!");
+
+        try {
+            Em2mATCommand.sendATC("at+cpin?\r", "READY");
+        } catch (ATCommandFailedException ex) {
+            throw new FailedInitException("PIN LOCK!");
+        }
+
         try{
             Constructor(servCenter);
         }catch (Exception e){
-            try {
-                Em2mATCommand.relaseATCommand();
-            } catch (ATCommandFailedException ex) { }
-            new FailedInitException("Could not initialize SMS Manager");
+            Em2mATCommand.relaseATCommand();
         }
     }
 
@@ -71,7 +74,7 @@ public class SMSManager{
             Em2mATCommand.sendATC("at+csmp=17,167,0,0");
             Em2mATCommand.sendATC("at+cmgs=\""
                     + message.getDestinNumber() + "\"", ">");
-            return Em2mATCommand.sendATC(message.getMessage()+"\032").indexOf("+CMGS:")>0;
+            return Em2mATCommand.sendATC(message.getMessage()+"\032").indexOf("+CMGS:")>=0;
         } catch (ATCommandFailedException e) {
             return false;
         }
@@ -137,22 +140,27 @@ public class SMSManager{
                 int val;
 
                 //year
-                val = Integer.parseInt(header[3].substring(0,1));
+                val = Integer.parseInt(header[3].substring(0,2));
+
+                //add 2000 for correct year in long format
+                //(09 means 2009, doesn't work properly before 2000)
+                val += CENTURY;
+
                 c.set(Calendar.YEAR, val);
                 //month
-                val = Integer.parseInt(header[3].substring(3,4));
+                val = Integer.parseInt(header[3].substring(3,5));
                 c.set(Calendar.MONTH, val);
                 //day
-                val = Integer.parseInt(header[3].substring(6,7));
+                val = Integer.parseInt(header[3].substring(6,8));
                 c.set(Calendar.DAY_OF_MONTH, val);
                 //hour
-                val = Integer.parseInt(header[4].substring(0,1));
+                val = Integer.parseInt(header[4].substring(0,2));
                 c.set(Calendar.HOUR_OF_DAY, val);
                 //minute
-                val = Integer.parseInt(header[4].substring(3,4));
+                val = Integer.parseInt(header[4].substring(3,5));
                 c.set(Calendar.MINUTE, val);
                 //second
-                val = Integer.parseInt(header[4].substring(6,7));
+                val = Integer.parseInt(header[4].substring(6,8));
                 c.set(Calendar.SECOND, val);
 
                 res.setReceived(c.getTime());

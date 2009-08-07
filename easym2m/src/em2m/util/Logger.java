@@ -68,7 +68,7 @@ public class Logger {
             if((fc.fileSize()+str.length()) > MAX_FILE_SIZE)
                 fc.truncate(0);
             out.write((new Date()).toString().getBytes());
-            out.write(str.getBytes());
+            out.write((": "+str).getBytes());
             out.flush();
         }catch(IOException e){}
     }
@@ -89,7 +89,7 @@ public class Logger {
             if((fc.fileSize()+str.length()) > MAX_FILE_SIZE)
                 fc.truncate(0);
             out.write((new Date()).toString().getBytes());
-            out.write((str+"\n").getBytes());
+            out.write((": "+str+"\n").getBytes());
             out.flush();
         }catch(IOException e){}
     }

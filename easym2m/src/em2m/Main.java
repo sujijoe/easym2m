@@ -5,21 +5,16 @@
 
 package em2m;
 
-import com.siemens.icm.io.ATCommand;
-import com.siemens.icm.io.ATCommandFailedException;
-import com.siemens.icm.io.ATCommandResponseListener;
-import com.siemens.icm.io.comm.RS232PortList;
-import em2m.EventListener;
-import em2m.util.Logger;
-import java.util.Vector;
-import javax.microedition.midlet.*;
-import javax.microedition.*;
-import em2m.*;
 import em2m.io.GPIO;
 import em2m.sms.SMS;
 import em2m.sms.SMSManager;
-import em2m.util.Em2mATCommand;
 import em2m.util.Em2mString;
+import em2m.util.Logger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import javax.microedition.io.Connector;
+import javax.microedition.io.HttpConnection;
 
 
 /**
@@ -27,158 +22,144 @@ import em2m.util.Em2mString;
  */
 public class Main extends EM2Mlet{
 
-    ATCommand atc;
     EventListener list;
+    SMSManager m;
 
-        /*public class sendResponse extends Thread{
+    GPIO io;
 
-        SMSManager smsm;
-         *
-        public void run() {
-            ;// deal with response
-        }
-        }*/
+    //middle and top layer
+    static String destHost = "gerrys.webz.cz/handlecords.php?";
+    static String destPort = "80";
+
+    //interenet settings for T-mobile
+    static String connProfile = "bearer_type=gprs;access_point=internet.t-mobile.cz";
+
+
+    String openParam;
+    
+    HttpConnection      hc  = null;
+    InputStream         is  = null;
+    OutputStream        os  = null;
+
 
     public void startApp() {
+
         try {
+            Logger.printlnTS("App initialization...");
+
             // T-mobile CZ
-            SMSManager m = new SMSManager("+420603052000");
+            m = new SMSManager("+420603052000");
 
-            // Vodafone CZ
-            //SMSManager m = new SMSManager("+420608005681");
-            System.out.println("SMS manager initialized");
+            /*// Vodafone CZ
+            //m = new SMSManager("+420608005681");*/
 
-            /*SMS tmp = new SMS();
-            tmp.setDestinNumber("608942017");
-            tmp.setMessage("čeština");*/
-
-            //if (m.sendUcs2Message(tmp))
-                //return;
-
+            Logger.printlnTS("SMS manager initialized");
 
             //create new instance of EventListener
-            list = new EventListener(this);
-            //register him to Em2mATCommand
-            Em2mATCommand.registerListener(list);
-            System.out.println("SMS Listener set");
-            Em2mATCommand.sendATC("at+cmer=2,0,0,2,0\r");
-            System.out.println("Event Reporting set");
-            
-            m.readMessage(9);
+            list = new EventListener();
+            list.addSMListener(this, "+420603052000");
 
-            GPIO io = new GPIO();
+            Logger.printlnTS("SMS Listener set");
+
+
+
+            /*list.addCallListener(this);
+            System.out.println("Call Listener set");*/
+
+            //Em2mATCommand.sendATC("at+cind=0,0,,0,,,0,,0\r");
+            //Em2mATCommand.sendATC("at+cmer=2,0,0,2\r");
+            //System.out.println("Event Reporting set");
+            //System.out.println(Em2mATCommand.sendATC("at&f");)
+
+            /*SMS s = m.readMessage(4);
+            System.out.println(s);*/
+
+            io = new GPIO();
             io.openPin(0, true);
-            io.setVal(0, true);
-            //uloha
-            //v.run();
-            //m.sendMessage(tmp);
+            Logger.printlnTS("GPIO initialized");
 
-
-            /*atc = new ATCommand(false);
+            list.addGPSListener(this, 120);
+            //Logger.printlnTS
+            Logger.printlnTS("GPS Location Listener set");
             
-
-            //smse.setListener(this);
-            //atc.addListener(smse);
-
-            notifyDestroyed();
-
-
-            String res = sendATC("AT+COPS?\r");
-
-            //Wait for GSM logon
-            while(res==null||res.length()==0)
-            {
-                res = sendATC("AT+COPS?\r");
-            }
-            Logger.println(res);
-
-            String provider=res;
-
-
-            //rozsirene hlaseni chyb (AT+CMEE=2)
-            res = sendATC("AT+CMEE=2\r");
-            Logger.println(res);
-            if(!res.equalsIgnoreCase("OK"))
-            {
-                Logger.println("Nepovedlo se prepnout na rozsirene hlaseni chyb");
-                notifyDestroyed();
-            }
-
-            //textovy mod (AT+CMGF=1)
-            res = sendATC("AT+CMGF=1\r");
-            Logger.println(res);
-            if(!res.equalsIgnoreCase("OK"))
-            {
-                Logger.println("Nepovedlo se prejit do textoveho rezimu");
-                notifyDestroyed();
-            }
-
-            //Unicode mode UCS2 (AT+CSCS="UCS2")
-            res = sendATC("AT+CSCS=\"UCS2\"\r");
-            if(!res.equalsIgnoreCase("OK"))
-            {
-                Logger.println("Nepovedlo se prejit do unicode rezimu");
-                notifyDestroyed();
-            }
-            
-            //res = atc.send("AT+CSCS=?");
-            //System.out.println(res);
-            //res = atc.send("AT+CSCS?");
-            //System.out.println(res);
-            atc.send("AT+CMGS=\"002B003400320030003600300038003700330032003100360038\"\r");
-            atc.send("004A00300048004E0020006A00650020004B0049004E0047004A00300048004E0020006A00650020004B0049004E0047\u001A");
-            Logger.println("sms odeslana odeslana");
-            char ch = '\u0032';
-
-            //res = atc.send(provider + "\u001A");
-            
-
-            Logger.println(res+"\nkoncim");
-            Logger.close();
-            notifyDestroyed();*/
         } catch (Exception e) {
-            String tmp = e.getMessage();
-            System.out.println(tmp);
+            Logger.printlnTS(e.getMessage());
+            notifyDestroyed();
         }
-        System.out.println("App closed");
+        //Logger.printlnTS
+        Logger.printlnTS("App initialized and running");
     }
 
     public void pauseApp() {
     }
 
     public void destroyApp(boolean unconditional) {
-        try {
-            if(atc!=null)
-                atc.release();
-            if(list!=null)
-                Em2mATCommand.getATCommand().removeListener(list);
-        } catch (ATCommandFailedException ex) {
-            System.out.println(ex.getMessage());
-        }
-    }
-    
-    //this method handles ATC data flow
-    private String sendATC(String command){
-        try {
-            String res = atc.send(command);
-            String simpleRes[] = Em2mString.split(res,"\r\n");
-            if (simpleRes!=null)
-                //vysledek ma vice radku
-                if(simpleRes.length>=1)
-                    return simpleRes[1];
-        } catch (ATCommandFailedException ex) {
-            return "ATERR";
-        } catch (IllegalStateException ex) {
-            return "ILLSTAT";
-        } catch (IllegalArgumentException ex) {
-            return "ILLAR";
-        }
-            return "";
+        if(list!=null)
+            list.relase();
     }
 
-    public void handleEvent(int event, String data) {
-        System.out.println("handle method called!\n"+event+"\n");
-        System.out.println("exiting program");
-        notifyDestroyed();
+    public void handleEvent(int event, Object data) {
+
+        //incoming SMS
+        if (event==EventListener.NEW_SMS_EVENT) {
+
+            SMS message = (SMS)data;
+            if(message.getSourceNumber().equalsIgnoreCase("+420608732168"))
+            {
+                //handle command
+                if(message.getMessage().indexOf("start")>=0)
+                    io.setVal(0, true);
+                if(message.getMessage().indexOf("stop")>=0)
+                    io.setVal(0, false);
+                if(message.getMessage().indexOf("exit")>=0)
+                    notifyDestroyed();
+            }
+
+        }else if (event==EventListener.GPS_LOCATION_UPDATE){
+
+            //parse data
+            String nmea = (String) data;
+            String[] parts = Em2mString.split(nmea, ",");
+
+            //gps neni zamerena
+            if (parts[9].indexOf("0")>=0)
+                return;
+
+            try {
+                //blink
+                io.setVal(0,true);
+
+                //Open Connection and send data
+                openParam = "http://" + destHost+"lon="+parts[2] + "&lat="+parts[4]+";" + connProfile;
+
+                hc = (HttpConnection) Connector.open(openParam,Connector.READ);
+
+                int res = hc.getResponseCode();
+
+                //spatna odpoved
+                if (res!=200) return;
+
+                /* Read Data */
+                StringBuffer str = new StringBuffer();
+                int ch;
+                while ((ch = is.read()) != -1) {
+                    str.append((char) ch);
+                }
+
+                /* Close all */
+                is.close();
+                hc.close();
+
+                //log result
+                Logger.printlnTS(str.toString());
+                io.setVal(0, false);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    public SMSManager getSMSManager() {
+        return m;
     }
 }
