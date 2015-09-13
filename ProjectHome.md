@@ -1,0 +1,1 @@
+M2M framework for Siemens wireless modules (IMP-NG) for Java™ developers.
